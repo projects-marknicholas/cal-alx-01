@@ -1,3 +1,9 @@
+<?php
+  session_start();
+  if(!isset($_SESSION['login_response']['success'])){
+    header('location: http://localhost/web-app/cap-alx-01/backend/api/logout');
+  }
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

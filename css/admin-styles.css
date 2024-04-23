@@ -471,6 +471,7 @@
   flex-direction: column;
 }
 .accounting-div {
+  height: 220px;
   border: 1px solid #ccc;
   border-radius: 5px;
   padding: 12px;
@@ -486,7 +487,7 @@
   background-color: #ffffff;
 }
 #selectedItems {
-  max-height: 320px; 
+  max-height: 200px; 
   overflow-y: auto;
 }
 .flex {

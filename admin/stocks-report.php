@@ -1,3 +1,9 @@
+<?php
+  session_start();
+  if(!isset($_SESSION['login_response']['success'])){
+    header('location: http://localhost/web-app/cap-alx-01/backend/api/logout');
+  }
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,48 +42,8 @@
     </div>
   </section>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
   <script src="../js/sidebar-effects.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const startDateInput = document.getElementById('start_date');
-      const endDateInput = document.getElementById('end_date');
-      const tableBody = document.querySelector('#pdfTable tbody');
-
-      // Function to fetch data from the endpoint and populate the table
-      function fetchData(startDate, endDate) {
-        fetch(`http://localhost/web-app/cap-alx-01/backend/api/stocks-report?start_date=${startDate}&end_date=${endDate}`)
-          .then(response => response.json())
-          .then(data => {
-            // Clear existing table rows
-            tableBody.innerHTML = '';
-
-            // Loop through the data and create table rows
-            data.forEach(item => {
-              const row = document.createElement('tr');
-              row.innerHTML = `
-                <td>${item.product_name}</td>
-                <td>${item.quantity}</td>
-                <td>${item.unit_price}</td>
-              `;
-              tableBody.appendChild(row);
-            });
-          })
-          .catch(error => console.error('Error fetching data:', error));
-      }
-
-      // Event listener for search inputs change
-      startDateInput.addEventListener('change', function () {
-        const startDate = this.value;
-        const endDate = endDateInput.value;
-        fetchData(startDate, endDate);
-      });
-
-      endDateInput.addEventListener('change', function () {
-        const startDate = startDateInput.value;
-        const endDate = this.value;
-        fetchData(startDate, endDate);
-      });
-    });
-  </script>
+  <script src="../js/stocks-report-functions.js"></script>
 </body>
 </html>

@@ -29,6 +29,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to create a sales item
   function createSalesItem(stock) {
+    const maxLength = 50; // Maximum characters allowed for description
+    let truncatedDescription = stock.description;
+
+    if (stock.description.length > maxLength) {
+      truncatedDescription = stock.description.substring(0, maxLength) + '...';
+    }
+
     const item = document.createElement('div');
     item.classList.add('item');
     item.innerHTML = `
@@ -37,8 +44,8 @@ document.addEventListener('DOMContentLoaded', function () {
       </div>
       <div class="item-info">
         <h1>${stock.product_name}</h1>
-        <p>${stock.description}</p>
-        <p>Unit Price: ${stock.unit_price}</p>
+        <p>${truncatedDescription}</p>
+        <p><b>₱ ${stock.unit_price}<b></p>
       </div>
     `;
     return item;
@@ -85,14 +92,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to display selected items
   function displaySelectedItems() {
+    const maxLength = 50; // Maximum characters allowed for description
+    
     selectedItemsDiv.innerHTML = '';
     selectedItems.forEach(item => {
+      let truncatedDescription = item.description;
+      if (item.description.length > maxLength) {
+        truncatedDescription = item.description.substring(0, maxLength) + '...';
+      }
+
       const selectedItemDiv = document.createElement('div');
       selectedItemDiv.classList.add('selected-item');
       selectedItemDiv.innerHTML = `
         <p>Product ID: ${item.product_id}</p>
         <p>Name: ${item.product_name}</p>
-        <p>Description: ${item.description}</p>
+        <p>Description: ${truncatedDescription}</p>
         <p>Unit Price: ${item.unit_price}</p>
         <input type="number" class="quantity-input" value="${item.quantity}" min="1">
         <button class="delete-button">Delete</button>
