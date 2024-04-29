@@ -1,5 +1,9 @@
 <?php
 include '../config.php';
+require 'escpos/autoload.php';
+use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
+use Mike42\Escpos\Printer;
+
 
 function post_register(){
   $response = array();
@@ -424,6 +428,208 @@ function get_logout(){
   echo json_encode($response);
   header('location: http://localhost/web-app/cap-alx-01/');
   exit();
+}
+
+function print_sales() {
+  global $conn;
+  session_start();
+
+  // Check if user session data is available
+  if (!isset($_SESSION['login_response']['user'])) {
+    $printer->text("Error: User session data not found. Please log in.\n");
+    return;
+  }
+
+  $printerName = 'Xprinter';
+
+  $connector = new WindowsPrintConnector($printerName);
+
+  $printer = new Printer($connector);
+
+  // Fetch slip_no from the URL
+  if (isset($_GET['slip_no'])) {
+      $slip_no = $_GET['slip_no'];
+  } else {
+      echo "Error: slip_no parameter not provided in the URL";
+      return;
+  }
+
+  try {
+      // Fetch data from the sell table using the slip_no
+      // Example query:
+      $sql = "SELECT sell.product_id, sell.quantity AS sold_quantity, sell.sell_date,
+                     stocks.product_name, stocks.unit_price, stocks.quantity AS initial_quantity, stocks.stocks_date
+              FROM sell
+              JOIN stocks ON sell.product_id = stocks.product_id
+              WHERE sell.slip_no = ?";
+      $stmt = $conn->prepare($sql);
+      if (!$stmt) {
+          throw new Exception("Error preparing SQL statement: " . $conn->error);
+      }
+      $stmt->bind_param('s', $slip_no);
+      $result = $stmt->execute();
+      if (!$result) {
+          throw new Exception("Error executing SQL statement: " . $stmt->error);
+      }
+      $items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+  } catch (Exception $e) {
+      echo "Error fetching data from database: " . $e->getMessage();
+      return;
+  }
+
+  // Print header
+  $printer->text("BINAKI SELLER\n");
+  $printer->text(str_repeat("-", 32) . "\n");
+  $printer->text("Slip#: " . $slip_no . "\n");
+  $user = $_SESSION['login_response']['user'];
+  $printer->text("Staff: " . $user['first_name'] . " " . $user['last_name'] . "\n");
+  $printer->text("Date: " . date("Y-m-d") . "\n");
+  $printer->text(str_repeat("-", 32) . "\n");
+
+  // Print table headers
+  $printer->text("Qty  Description          Amount\n");
+  $printer->text(str_repeat("-", 32) . "\n");
+
+  // Print items
+  foreach ($items as $item) {
+      $qty = $item['sold_quantity'];
+      $description = substr($item['product_name'], 0, 13); // Truncate description if necessary
+      $amount = number_format($item['unit_price'], 2) . " Php";
+      
+      // Adjust spacing and alignment
+      $printer->text(sprintf("%-5s %-15s %10s\n", $qty, $description, $amount));
+  }
+
+  // Print subtotal, tax, cash, and change
+  $printer->text(str_repeat("-", 32) . "\n");
+  $printer->text(sprintf("%-21s %s\n", "Subtotal:", str_pad(number_format($_GET['subtotal'], 2) . " Php", 10, ' ', STR_PAD_LEFT)));
+  $printer->text(sprintf("%-21s %s\n", "Tax:", str_pad(number_format($_GET['tax'], 2) . " Php", 10, ' ', STR_PAD_LEFT)));
+  $printer->text(sprintf("%-21s %s\n", "Cash:", str_pad($_GET['cash'] . " Php", 10, ' ', STR_PAD_LEFT)));
+  $printer->text(sprintf("%-21s %s\n", "Change:", str_pad($_GET['change'] . " Php", 10, ' ', STR_PAD_LEFT)));
+  $printer->text(str_repeat("-", 32) . "\n");
+
+  // Print total
+  $total = $_GET['subtotal'] + $_GET['tax'];
+  $printer->text(sprintf("%-21s %s\n", "Total:", str_pad(number_format($total, 2) . " Php", 10, ' ', STR_PAD_LEFT)));
+  $printer->text(str_repeat("-", 32) . "\n");
+
+  // Print thank you message
+  $printer->text("Thank you for your purchase!\n\n\n\n");
+
+  // Close printer connection
+  $printer->cut();
+  $printer->close();
+}
+
+function print_sales_report() {
+  global $conn;
+
+  // Get start and end dates from the GET parameters
+  $startDate = $_GET['start_date'];
+  $endDate = $_GET['end_date'];
+
+  // Prepare and execute SQL query to fetch data from the sell and stocks tables between the specified dates
+  try {
+      $sql = "SELECT sell.slip_no, stocks.product_name, sell.quantity, sell.sell_date, stocks.unit_price 
+              FROM sell 
+              INNER JOIN stocks ON sell.product_id = stocks.product_id 
+              WHERE DATE(sell.sell_date) BETWEEN ? AND ?";
+      $stmt = $conn->prepare($sql);
+      if (!$stmt) {
+          throw new Exception("Error preparing SQL statement: " . $conn->error);
+      }
+      $stmt->bind_param('ss', $startDate, $endDate);
+      $result = $stmt->execute();
+      if (!$result) {
+          throw new Exception("Error executing SQL statement: " . $stmt->error);
+      }
+      $data = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+  } catch (Exception $e) {
+      echo "Error fetching data from database: " . $e->getMessage();
+      return;
+  }
+
+  $totalSales = 0;
+
+  // Print header
+  $printerName = 'Xprinter';
+  $connector = new WindowsPrintConnector($printerName);
+  $printer = new Printer($connector);
+
+  // Print header
+  $printer->text("CAP ALEX INVENTORIES\n");
+  $printer->text(str_repeat("-", 32) . "\n");
+  $printer->text("Sales Report\n");
+  $printer->text("Start Date: $startDate\n");
+  $printer->text("End Date: $endDate\n");
+
+  // Calculate total sales and print table headers
+  $printer->text(str_repeat("-", 32) . "\n");
+  $printer->text(sprintf("%-15s %5s %9s", "Product", "Qty", "Total\n")); // Changed "Quantity" to "Qty"
+  $printer->text(str_repeat("-", 32) . "\n");
+
+  // Print items
+  foreach ($data as $item) {
+      $productName = substr($item['product_name'], 0, 15); // Truncate product name if necessary
+      $quantity = $item['quantity'];
+      $totalUnitPrice = $quantity * $item['unit_price'];
+      $printer->text(sprintf("%-15s %5s %9s\n", $productName, $quantity, "Php " . number_format($totalUnitPrice, 2)));
+      $totalSales += $totalUnitPrice;
+  }
+
+  // Print total sales
+  $printer->text(str_repeat("-", 32) . "\n");
+  $printer->text("Total Sales: Php " . number_format($totalSales, 2) . "\n\n\n\n");
+
+  // Close printer connection
+  $printer->cut();
+  $printer->close();
+}
+
+function print_stocks_report() {
+  global $conn;
+
+  // Prepare and execute SQL query to fetch data from the stocks table
+  try {
+      $sql = "SELECT product_name, quantity, unit_price 
+              FROM stocks";
+      $result = $conn->query($sql);
+      if (!$result) {
+          throw new Exception("Error executing SQL statement: " . $conn->error);
+      }
+      $data = $result->fetch_all(MYSQLI_ASSOC);
+  } catch (Exception $e) {
+      echo "Error fetching data from database: " . $e->getMessage();
+      return;
+  }
+
+  // Print header
+  $printerName = 'Xprinter';
+  $connector = new WindowsPrintConnector($printerName);
+  $printer = new Printer($connector);
+
+  // Print header
+  $printer->text("CAP ALEX INVENTORIES\n");
+  $printer->text(str_repeat("-", 32) . "\n");
+  $printer->text("Stock Report\n");
+
+  // Print table headers
+  $printer->text(str_repeat("-", 32) . "\n");
+  $printer->text(sprintf("%-15s %5s %9s", "Product", "Qty", "Unit Price\n")); // Using "Qty" instead of "Quantity"
+  $printer->text(str_repeat("-", 32) . "\n");
+
+  // Print items
+  foreach ($data as $item) {
+      $productName = substr($item['product_name'], 0, 15); // Truncate product name if necessary
+      $quantity = $item['quantity'];
+      $unitPrice = $item['unit_price'];
+      $printer->text(sprintf("%-15s %5s %9s\n", $productName, $quantity, "Php " . number_format($unitPrice, 2)));
+  }
+  $printer->text("\n\n\n");
+
+  // Close printer connection
+  $printer->cut();
+  $printer->close();
 }
 
 

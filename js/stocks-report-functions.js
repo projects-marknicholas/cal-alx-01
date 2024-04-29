@@ -4,98 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const tableBody = document.querySelector('#pdfTable tbody');
   const printButton = document.querySelector('.print-button');
 
-  // Function to generate PDF for stocks report with custom design and CSS styles
-  function generatePDF(startDate, endDate) {
-    const opt = {
-      margin: 1,
-      filename: 'stocks_report.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    // Fetch data from the endpoint
-    fetch(`http://localhost/web-app/cap-alx-01/backend/api/stocks-report?start_date=${startDate}&end_date=${endDate}`)
-      .then(response => response.json())
-      .then(data => {
-        // Construct HTML content with CSS styles
-        const htmlContent = `
-          <style>
-            /* CSS styles for the stocks report */
-            .custom-stocks-report {
-              font-family: Arial, sans-serif;
-              max-width: 800px;
-              margin: 0 auto;
-              padding: 20px;
-              background-color: #f5f5f5;
-              border-radius: 10px;
-            }
-
-            .custom-stocks-report h1 {
-              text-align: center;
-              color: #333;
-            }
-
-            .custom-stocks-report p {
-              margin-bottom: 10px;
-              color: #666;
-            }
-
-            .custom-stocks-report table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-            }
-
-            .custom-stocks-report th, .custom-stocks-report td {
-              border: 1px solid #ddd;
-              padding: 8px;
-              text-align: left;
-            }
-
-            .custom-stocks-report th {
-              background-color: #f2f2f2;
-            }
-          </style>
-          <div class="custom-stocks-report">
-            <h1>Stocks Report</h1>
-            <p>Start Date: ${startDate}</p>
-            <p>End Date: ${endDate}</p>
-            <!-- Stocks table -->
-            <table>
-              <thead>
-                <tr>
-                  <th>Product Name</th>
-                  <th>Quantity</th>
-                  <th>Unit Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${data.map(item => `
-                  <tr>
-                    <td>${item.product_name}</td>
-                    <td>${item.quantity}</td>
-                    <td>${item.unit_price}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-
-        // Convert the custom HTML content to PDF
-        html2pdf().from(htmlContent).set(opt).save();
-      })
-      .catch(error => console.error('Error fetching data:', error));
-  } 
-
-  // Event listener for "Print PDF Report" button
-  printButton.addEventListener('click', function () {
-    const startDate = startDateInput.value;
-    const endDate = endDateInput.value;
-    generatePDF(startDate, endDate);
-  });
-
   // Function to fetch data from the endpoint and populate the table
   function fetchData(startDate, endDate) {
     fetch(`http://localhost/web-app/cap-alx-01/backend/api/stocks-report?start_date=${startDate}&end_date=${endDate}`)
@@ -130,4 +38,27 @@ document.addEventListener('DOMContentLoaded', function () {
     const endDate = this.value;
     fetchData(startDate, endDate);
   });
+
+  // Event listener for "Print PDF Report" button
+  printButton.addEventListener('click', function () {
+    const startDate = startDateInput.value;
+    const endDate = endDateInput.value;
+    printStocksReport(startDate, endDate);
+  });
+
+  // Function to print stocks report
+  function printStocksReport(startDate, endDate) {
+    fetch(`http://localhost/web-app/cap-alx-01/backend/api/print-stocks-report?start_date=${startDate}&end_date=${endDate}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then(data => {
+        // Trigger browser's print functionality
+        window.print();
+      })
+      .catch(error => console.error('Error fetching data:', error));
+  }
 });

@@ -23,7 +23,7 @@
       <input type="date" class="search-input" id="start_date">
       <label for="end_date">End (Date & Time)</label>
       <input type="date" class="search-input" id="end_date">
-      <button class="print-button">Print PDF Report</button>
+      <button class="print-button">Print Stocks Report</button>
     </div>
 
     <div class="table-container">

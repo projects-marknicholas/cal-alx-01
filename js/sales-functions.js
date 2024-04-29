@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
       product_id: item.product_id,
       quantity: item.quantity
     }));
-
+  
     fetch('http://localhost/web-app/cap-alx-01/backend/api/add-sell', {
       method: 'POST',
       headers: {
@@ -181,20 +181,40 @@ document.addEventListener('DOMContentLoaded', function () {
     })
     .then(response => {
       if (response.ok) {
-        // Clear selected items upon successful order placement
-        selectedItems.splice(0, selectedItems.length);
-        displaySelectedItems(); // Update the display
-        // Reset cash and change fields
-        resetCashAndChange();
-        // Show success message
-        document.getElementById('success-message').textContent = 'Order successfully placed';
-        document.getElementById('success-message').style.display = 'block';
-        setTimeout(function() {
-          document.getElementById('success-message').style.display = 'none';
-        }, 3000); // Hide success message after 3 seconds
+        return response.json(); // Parse response JSON
       } else {
         throw new Error('Failed to place order');
       }
+    })
+    .then(data => {
+      const cashInput = document.getElementById('cashInput');
+      const cashAmount = parseFloat(cashInput.value);
+      const subtotal = parseFloat(document.getElementById('subtotal').textContent);
+      const tax = parseFloat(document.getElementById('tax').textContent);
+      const slipNo = data.slip_no; // Extract slip_no from response
+      const changeParam = parseFloat(document.getElementById('change').textContent);
+      // Clear selected items upon successful order placement
+      selectedItems.splice(0, selectedItems.length);
+      displaySelectedItems(); // Update the display
+      // Reset cash and change fields
+      resetCashAndChange();
+      // Fetch items again to print receipt
+      fetch(`http://localhost/web-app/cap-alx-01/backend/api/print-receipt?slip_no=${slipNo}&subtotal=${subtotal}&tax=${tax}&cash=${cashAmount}&change=${changeParam}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to print receipt');
+        }
+      })
+      .catch(error => {
+        console.error('Error printing receipt:', error);
+      });
+  
+      // Show success message
+      document.getElementById('success-message').textContent = 'Order successfully placed';
+      document.getElementById('success-message').style.display = 'block';
+      setTimeout(function() {
+        document.getElementById('success-message').style.display = 'none';
+      }, 3000); // Hide success message after 3 seconds
     })
     .catch(error => {
       console.error('Error placing order:', error);

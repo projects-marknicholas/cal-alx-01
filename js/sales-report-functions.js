@@ -4,92 +4,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const tableBody = document.querySelector('#pdfTable tbody');
   const printButton = document.querySelector('.print-button');
 
-  // Function to generate PDF for sales report with custom design and CSS styles
-  function generatePDF(startDate, endDate, data, totalSales, mostOrderedItem, leastOrderedItem) {
-    const opt = {
-      margin: 1,
-      filename: 'sales_report.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    // Construct HTML content with CSS styles
-    const htmlContent = `
-      <style>
-        /* CSS styles for the sales report */
-        .custom-sales-report {
-          font-family: Arial, sans-serif;
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 20px;
-          background-color: #f5f5f5;
-          border-radius: 10px;
-        }
-
-        .custom-sales-report h1 {
-          text-align: center;
-          color: #333;
-        }
-
-        .custom-sales-report p {
-          margin-bottom: 10px;
-          color: #666;
-        }
-
-        .custom-sales-report table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-        }
-
-        .custom-sales-report th, .custom-sales-report td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-        }
-
-        .custom-sales-report th {
-          background-color: #f2f2f2;
-        }
-      </style>
-      <div class="custom-sales-report">
-        <h1>Sales Report</h1>
-        <p>Start Date: ${startDate}</p>
-        <p>End Date: ${endDate}</p>
-        <p>Total Sales: ₱ ${totalSales}</p>
-        <p>Most Ordered Item: ${mostOrderedItem}</p>
-        <p>Least Ordered Item: ${leastOrderedItem}</p>
-        <!-- Sales table -->
-        <table>
-          <thead>
-            <tr>
-              <th>Product Name</th>
-              <th>Quantity</th>
-              <th>Total Unit Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.map(item => `
-              <tr>
-                <td>${item.product_name}</td>
-                <td>${item.quantity}</td>
-                <td>₱ ${item.total_unit_price}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    // Convert the custom HTML content to PDF
-    html2pdf().from(htmlContent).set(opt).save();
-  }
-
   // Function to fetch data from the endpoint and populate the table
   function fetchData(startDate, endDate) {
     fetch(`http://localhost/web-app/cap-alx-01/backend/api/sales-report?start_date=${startDate}&end_date=${endDate}`)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(data => {
         // Calculate total sales
         const totalSales = data.reduce((acc, curr) => acc + parseFloat(curr.total_unit_price), 0).toFixed(2);
@@ -117,8 +40,24 @@ document.addEventListener('DOMContentLoaded', function () {
         // Attach event listener to "Print PDF Report" button
         printButton.addEventListener('click', function () {
           // Generate PDF after populating the table
-          generatePDF(startDate, endDate, data, totalSales, mostOrderedItem, leastOrderedItem);
+          printSalesReport(startDate, endDate);
         });
+      })
+      .catch(error => console.error('Error fetching data:', error));
+  }
+
+  // Function to fetch data from the endpoint and print the sales report
+  function printSalesReport(startDate, endDate) {
+    fetch(`http://localhost/web-app/cap-alx-01/backend/api/print-sales-report?start_date=${startDate}&end_date=${endDate}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then(data => {
+        // Trigger browser's print functionality
+        window.print();
       })
       .catch(error => console.error('Error fetching data:', error));
   }

@@ -24,6 +24,9 @@ $routes = [
   'GET:/web-app/cap-alx-01/backend/api/sales-report' => 'get_sales_report',
   'GET:/web-app/cap-alx-01/backend/api/auth' => 'get_auth',
   'GET:/web-app/cap-alx-01/backend/api/logout' => 'get_logout',
+  'GET:/web-app/cap-alx-01/backend/api/print-receipt' => 'print_sales',
+  'GET:/web-app/cap-alx-01/backend/api/print-sales-report' => 'print_sales_report',
+  'GET:/web-app/cap-alx-01/backend/api/print-stocks-report' => 'print_stocks_report',
 
   // PUT Requests
   
