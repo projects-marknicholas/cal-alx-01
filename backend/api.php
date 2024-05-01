@@ -275,6 +275,214 @@ function post_add_sell(){
 
 
 
+function dashboard(){
+  $response = array();
+
+  global $conn;
+
+  // Get the current year and month
+  $current_year = date('Y');
+  $current_month = date('n');
+  $current_day = date('j');
+
+  // Prepare the SQL query to fetch monthly sales reports
+  $query = "SELECT MONTHNAME(sell.sell_date) AS month, 
+                   SUM(sell.quantity * stocks.unit_price) AS total_sales 
+            FROM sell
+            LEFT JOIN stocks ON sell.product_id = stocks.product_id
+            WHERE YEAR(sell.sell_date) = ?
+            GROUP BY YEAR(sell.sell_date), MONTH(sell.sell_date)
+            ORDER BY YEAR(sell.sell_date), MONTH(sell.sell_date)";
+  
+  // Prepare and bind parameters for the SQL query
+  $stmt = $conn->prepare($query);
+  $stmt->bind_param("s", $current_year);
+
+  // Execute the SQL query
+  if($stmt->execute()){
+    $result = $stmt->get_result();
+
+    // Initialize an array to store monthly sales
+    $monthly_sales_reports = array();
+
+    // Loop through each month from January to December
+    for ($month_counter = 1; $month_counter <= 12; $month_counter++) {
+      $month_name = date('F', mktime(0, 0, 0, $month_counter, 1, $current_year));
+      $found = false;
+
+      // Check if there are sales for the current month in the fetched data
+      while ($row = $result->fetch_assoc()) {
+        if ($row['month'] === $month_name) {
+          $monthly_sales_reports[] = $row;
+          $found = true;
+          break;
+        }
+      }
+
+      // If no sales were found for the current month, add an entry with sales amount 0
+      if (!$found) {
+        $monthly_sales_reports[] = array('month' => $month_name, 'total_sales' => 0);
+      }
+
+      // Move the result pointer back to the beginning for the next iteration
+      $result->data_seek(0);
+    }
+
+    // Check if any sales reports were found
+    if(!empty($monthly_sales_reports)){
+      $response['Sales'] = $monthly_sales_reports;
+    } else {
+      $response['error'] = 'No sales reports found for the current year.';
+    }
+  } else {
+    // Error executing the SQL query
+    $response['error'] = 'Error fetching monthly sales reports: ' . $conn->error;
+  }
+
+  // Close the statement
+  $stmt->close();
+
+  // Calculate total sales for last month, this month, and today
+  $last_month_start = date('Y-m-d', strtotime('first day of last month'));
+  $last_month_end = date('Y-m-d', strtotime('last day of last month'));
+  $this_month_start = date('Y-m-d', strtotime('first day of this month'));
+  $this_month_end = date('Y-m-d');
+  $today = date('Y-m-d');
+  $total_sales_last_month = 0;
+  $total_sales_this_month = 0;
+  $total_sales_today = 0;
+  
+  // Fetch total sales for last month
+  $query_last_month = "SELECT SUM(sell.quantity * stocks.unit_price) AS total_sales_last_month 
+                        FROM sell
+                        LEFT JOIN stocks ON sell.product_id = stocks.product_id
+                        WHERE DATE(sell.sell_date) BETWEEN ? AND ?";
+  $stmt_last_month = $conn->prepare($query_last_month);
+  if($stmt_last_month) {
+    $stmt_last_month->bind_param("ss", $last_month_start, $last_month_end);
+    $stmt_last_month->execute();
+    $result_last_month = $stmt_last_month->get_result();
+    $total_sales_last_month_row = $result_last_month->fetch_assoc();
+    $total_sales_last_month = $total_sales_last_month_row['total_sales_last_month'] ?? 0;
+    $stmt_last_month->close();
+  } else {
+    $response['error'] = 'Error preparing statement for last month\'s sales: ' . $conn->error;
+  }
+
+  // Fetch total sales for this month
+  $query_this_month = "SELECT SUM(sell.quantity * stocks.unit_price) AS total_sales_this_month 
+                        FROM sell
+                        LEFT JOIN stocks ON sell.product_id = stocks.product_id
+                        WHERE DATE(sell.sell_date) BETWEEN ? AND ?";
+  $stmt_this_month = $conn->prepare($query_this_month);
+  if($stmt_this_month) {
+    $stmt_this_month->bind_param("ss", $this_month_start, $this_month_end);
+    $stmt_this_month->execute();
+    $result_this_month = $stmt_this_month->get_result();
+    $total_sales_this_month_row = $result_this_month->fetch_assoc();
+    $total_sales_this_month = $total_sales_this_month_row['total_sales_this_month'] ?? 0;
+    $stmt_this_month->close();
+  } else {
+    $response['error'] = 'Error preparing statement for this month\'s sales: ' . $conn->error;
+  }
+
+  // Fetch total sales for today
+  $query_today = "SELECT SUM(sell.quantity * stocks.unit_price) AS total_sales_today 
+                  FROM sell
+                  LEFT JOIN stocks ON sell.product_id = stocks.product_id
+                  WHERE DATE(sell.sell_date) = ?";
+  $stmt_today = $conn->prepare($query_today);
+  if($stmt_today) {
+    $stmt_today->bind_param("s", $today);
+    $stmt_today->execute();
+    $result_today = $stmt_today->get_result();
+    $total_sales_today_row = $result_today->fetch_assoc();
+    $total_sales_today = $total_sales_today_row['total_sales_today'] ?? 0;
+    $stmt_today->close();
+  } else {
+    $response['error'] = 'Error preparing statement for today\'s sales: ' . $conn->error;
+  }
+
+  // Check if last month or this month had better sales
+  $last_month_better = $total_sales_last_month > $total_sales_this_month;
+  $this_month_better = $total_sales_this_month > $total_sales_last_month;
+
+  // Add total sales for last month, this month, and today to the response
+  $response['Monthly'] = array(
+    'sales_last_month' => $total_sales_last_month,
+    'sales_this_month' => $total_sales_this_month,
+    'last_month_better' => $last_month_better,
+    'this_month_better' => $this_month_better
+  );
+
+  // Add total sales for today to the response
+  $response['Daily'] = array(
+    'sales_today' => $total_sales_today
+  );
+
+  // Fetch overall stocks along with product names and quantities
+  $query_stocks = "SELECT stocks.product_name, SUM(stocks.quantity) AS total_quantity 
+                    FROM stocks 
+                    GROUP BY stocks.product_name LIMIT 6";
+  $result_stocks = $conn->query($query_stocks);
+
+  // Initialize an array to store stock details
+  $stocks = array();
+  $total_stock_quantity = 0;
+
+  if ($result_stocks) {
+    // Fetch stock details
+    while ($row_stocks = $result_stocks->fetch_assoc()) {
+      $stocks[] = $row_stocks;
+      $total_stock_quantity += $row_stocks['total_quantity'];
+    }
+    $response['Stocks'] = $stocks;
+    $response['TotalStockQuantity'] = $total_stock_quantity;
+  } else {
+    $response['error'] = 'Error fetching stock details: ' . $conn->error;
+  }
+
+  // Fetch last three orders with product details
+  $query_orders = "SELECT sell.id, sell.slip_no, sell.product_id, sell.quantity, sell.sell_date, 
+    stocks.product_name, stocks.unit_price
+    FROM sell
+    LEFT JOIN stocks ON sell.product_id = stocks.product_id
+    ORDER BY sell.sell_date DESC
+    LIMIT 3";
+  $result_orders = $conn->query($query_orders);
+
+  // Initialize an array to store order details
+  $orders = array();
+
+  if ($result_orders) {
+    // Fetch order details
+    while ($row_orders = $result_orders->fetch_assoc()) {
+      // Calculate the total amount for each order
+      $total_amount = $row_orders['quantity'] * $row_orders['unit_price'];
+
+      // Create an array to store order details
+      $order_details = array(
+      'id' => $row_orders['id'],
+      'slip_no' => $row_orders['slip_no'],
+      'product_id' => $row_orders['product_id'],
+      'product_name' => $row_orders['product_name'],
+      'quantity' => $row_orders['quantity'],
+      'unit_price' => $row_orders['unit_price'],
+      'total_amount' => $total_amount,
+      'sell_date' => $row_orders['sell_date']
+    );
+
+    // Add order details to the orders array
+    $orders[] = $order_details;
+    }
+    $response['Orders'] = $orders;
+  } else {
+    $response['error'] = 'Error fetching order details: ' . $conn->error;
+  }
+
+  // Return the response as JSON
+  echo json_encode($response);
+}
 
 function get_all_stocks(){
   $response = array();
@@ -440,7 +648,7 @@ function print_sales() {
     return;
   }
 
-  $printerName = 'Xprinter';
+  $printerName = 'CAPALX';
 
   $connector = new WindowsPrintConnector($printerName);
 
@@ -533,7 +741,7 @@ function print_sales_report() {
       $sql = "SELECT sell.slip_no, stocks.product_name, sell.quantity, sell.sell_date, stocks.unit_price 
               FROM sell 
               INNER JOIN stocks ON sell.product_id = stocks.product_id 
-              WHERE DATE(sell.sell_date) BETWEEN ? AND ?";
+              WHERE DATE(sell.sell_date) BETWEEN ? AND ? ORDER BY id DESC";
       $stmt = $conn->prepare($sql);
       if (!$stmt) {
           throw new Exception("Error preparing SQL statement: " . $conn->error);
@@ -552,7 +760,7 @@ function print_sales_report() {
   $totalSales = 0;
 
   // Print header
-  $printerName = 'Xprinter';
+  $printerName = 'CAPALX';
   $connector = new WindowsPrintConnector($printerName);
   $printer = new Printer($connector);
 
@@ -592,7 +800,7 @@ function print_stocks_report() {
   // Prepare and execute SQL query to fetch data from the stocks table
   try {
       $sql = "SELECT product_name, quantity, unit_price 
-              FROM stocks";
+              FROM stocks ORDER BY product_name";
       $result = $conn->query($sql);
       if (!$result) {
           throw new Exception("Error executing SQL statement: " . $conn->error);
@@ -604,7 +812,7 @@ function print_stocks_report() {
   }
 
   // Print header
-  $printerName = 'Xprinter';
+  $printerName = 'CAPALX';
   $connector = new WindowsPrintConnector($printerName);
   $printer = new Printer($connector);
 

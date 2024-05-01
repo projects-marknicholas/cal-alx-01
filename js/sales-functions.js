@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Calculate tax (if any)
     // For example, let's say the tax rate is 10%
-    tax = 0.1 * subtotal;
+    tax = 0 * subtotal;
 
     // Calculate total
     const total = subtotal + tax;
