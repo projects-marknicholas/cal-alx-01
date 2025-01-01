@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
     formData.append('email', email);
     formData.append('password', password);
 
-    fetch('http://localhost/web-app/cap-alx-01/backend/api/login', {
+    fetch('http://localhost/web-app/lspu-cmi/backend/api/login', {
       method: 'POST',
       body: formData
     })
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
     formData.append('password', password);
     formData.append('confirm_password', confirmPassword);
 
-    fetch('http://localhost/web-app/cap-alx-01/backend/api/register', {
+    fetch('http://localhost/web-app/lspu-cmi/backend/api/register', {
       method: 'POST',
       body: formData
     })

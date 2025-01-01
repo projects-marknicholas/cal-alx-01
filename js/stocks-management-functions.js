@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to fetch data from the endpoint and populate the table
   function fetchData() {
-    fetch('http://localhost/web-app/cap-alx-01/backend/api/stocks')
+    fetch('http://localhost/web-app/lspu-cmi/backend/api/stocks')
       .then(response => response.json())
       .then(responseData => {
         data = responseData; // Store the original data for filtering
@@ -31,11 +31,13 @@ document.addEventListener('DOMContentLoaded', function () {
   // Function to create a table row
   function createTableRow(item) {
     const row = document.createElement('tr');
+    const expiryDate = item.expiry_date ? item.expiry_date.split(' ')[0] : '';
     row.innerHTML = `
       <td><input type="text" value="${item.product_name}"></td>
       <td><input type="text" value="${item.description}"></td>
       <td><input type="number" value="${item.quantity}"></td>
       <td><input type="number" value="${item.unit_price}"></td>
+      <td><input type="date" value="${expiryDate}"></td>
       <td><button class="update" data-product-id="${item.product_id}">Update</button>&nbsp;<button class="delete" data-product-id="${item.product_id}">Delete</button></td>
     `;
     return row;
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
     row.remove();
 
     // Send DELETE request to delete endpoint
-    fetch(`http://localhost/web-app/cap-alx-01/backend/api/delete-stock?product_id=${productId}`, {
+    fetch(`http://localhost/web-app/lspu-cmi/backend/api/delete-stock?product_id=${productId}`, {
       method: 'DELETE'
     })
     .then(response => response.json())
@@ -76,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const description = button.parentElement.parentElement.querySelector('td:nth-child(2) input').value;
     const quantity = button.parentElement.parentElement.querySelector('td:nth-child(3) input').value;
     const unitPrice = button.parentElement.parentElement.querySelector('td:nth-child(4) input').value;
+    const expiryDate = button.parentElement.parentElement.querySelector('td:nth-child(5) input').value;
 
     // Create FormData object to send updated product data
     const formData = new FormData();
@@ -84,9 +87,10 @@ document.addEventListener('DOMContentLoaded', function () {
     formData.append('description', description);
     formData.append('quantity', quantity);
     formData.append('unit_price', unitPrice);
+    formData.append('expiry_date', expiryDate);
 
     // Send POST request to update endpoint
-    fetch(`http://localhost/web-app/cap-alx-01/backend/api/update-stock?product_id=${productId}`, {
+    fetch(`http://localhost/web-app/lspu-cmi/backend/api/update-stock?product_id=${productId}`, {
       method: 'POST',
       body: formData
     })

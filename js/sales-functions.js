@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to fetch data from the endpoint and populate the sales grid
   function fetchStocks() {
-    fetch('http://localhost/web-app/cap-alx-01/backend/api/stocks')
+    fetch('http://localhost/web-app/lspu-cmi/backend/api/stocks')
       .then(response => response.json())
       .then(data => {
         // Clear existing items
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
       quantity: item.quantity
     }));
   
-    fetch('http://localhost/web-app/cap-alx-01/backend/api/add-sell', {
+    fetch('http://localhost/web-app/lspu-cmi/backend/api/add-sell', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Reset cash and change fields
       resetCashAndChange();
       // Fetch items again to print receipt
-      fetch(`http://localhost/web-app/cap-alx-01/backend/api/print-receipt?slip_no=${slipNo}&subtotal=${subtotal}&tax=${tax}&cash=${cashAmount}&change=${changeParam}`)
+      fetch(`http://localhost/web-app/lspu-cmi/backend/api/print-receipt?slip_no=${slipNo}&subtotal=${subtotal}&tax=${tax}&cash=${cashAmount}&change=${changeParam}`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Failed to print receipt');

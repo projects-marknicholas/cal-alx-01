@@ -1,5 +1,5 @@
 function fetchDataAndRenderCharts() {
-  fetch('http://localhost/web-app/cap-alx-01/backend/api/dashboard')
+  fetch('http://localhost/web-app/lspu-cmi/backend/api/dashboard')
     .then(response => response.json())
     .then(data => {
       // Update sales data

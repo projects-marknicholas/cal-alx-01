@@ -1,7 +1,7 @@
 <?php
   session_start();
   if(!isset($_SESSION['login_response']['success'])){
-    header('location: http://localhost/web-app/cap-alx-01/backend/api/logout');
+    header('location: http://localhost/web-app/lspu-cmi/backend/api/logout');
   }
 ?>
 <!DOCTYPE html>
@@ -41,6 +41,10 @@
         <input type="number" id="unit_price" name="unit_price" step="0.01" required>
       </div>
       <div>
+        <label for="expiry_date">Expiry Date</label>
+        <input type="date" id="expiry_date" name="expiry_date" required>
+      </div>
+      <div>
         <button type="submit">Submit</button>
       </div>
     </form>
@@ -60,6 +64,7 @@
         const description = document.getElementById('description').value;
         const quantity = document.getElementById('quantity').value;
         const unitPrice = document.getElementById('unit_price').value;
+        const expiryDate = document.getElementById('expiry_date').value;
 
         // Create a FormData object to send form data
         const formData = new FormData();
@@ -67,9 +72,10 @@
         formData.append('description', description);
         formData.append('quantity', quantity);
         formData.append('unit_price', unitPrice);
+        formData.append('expiry_date', expiryDate);
 
         // Send a POST request to the backend endpoint
-        fetch('http://localhost/web-app/cap-alx-01/backend/api/add-stock', {
+        fetch('http://localhost/web-app/lspu-cmi/backend/api/add-stock', {
           method: 'POST',
           body: formData
         })

@@ -1,7 +1,7 @@
 <?php
   session_start();
   if(!isset($_SESSION['login_response']['success'])){
-    header('location: http://localhost/web-app/cap-alx-01/backend/api/logout');
+    header('location: http://localhost/web-app/lspu-cmi/backend/api/logout');
   }
 ?>
 <!DOCTYPE html>
@@ -127,7 +127,7 @@
     // Function to fetch dashboard data from the API endpoint
     async function fetchDashboardData() {
       try {
-        const response = await fetch('http://localhost/web-app/cap-alx-01/backend/api/dashboard');
+        const response = await fetch('http://localhost/web-app/lspu-cmi/backend/api/dashboard');
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }

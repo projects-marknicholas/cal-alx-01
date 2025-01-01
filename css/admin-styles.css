@@ -335,7 +335,8 @@
   margin: 20px;
 }
 .home-section form input[type="text"],
-.home-section form input[type="number"] {
+.home-section form input[type="number"],
+.home-section form input[type="date"] {
   padding: 0.375rem 0.75rem;
   border: 1px solid #ced4da;
   border-radius: 0.25rem;
@@ -344,7 +345,8 @@
   margin-bottom: 1rem;
 }
 .home-section form input[type="text"]:focus,
-.home-section form input[type="number"]:focus {
+.home-section form input[type="number"]:focus,
+.home-section form input[type="date"]:focus {
   outline: none;
   border-color: var(--light-frosted);
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);

@@ -1,7 +1,7 @@
 <div class="sidebar">
   <div class="logo-details">
     <img src='' class="icon" style="height: 30px; margin-right: 12px;">
-    <div class="logo_name">Cap Alx 01</div>
+    <div class="logo_name">LSPU CMI</div>
     <i class='bx bx-menu' id="btn"></i>
   </div>
   <ul class="nav-list">

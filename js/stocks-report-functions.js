@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to fetch data from the endpoint and populate the table
   function fetchData(startDate, endDate) {
-    fetch(`http://localhost/web-app/cap-alx-01/backend/api/stocks-report?start_date=${startDate}&end_date=${endDate}`)
+    fetch(`http://localhost/web-app/lspu-cmi/backend/api/stocks-report?start_date=${startDate}&end_date=${endDate}`)
       .then(response => response.json())
       .then(data => {
         // Clear existing table rows
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to print stocks report
   function printStocksReport(startDate, endDate) {
-    fetch(`http://localhost/web-app/cap-alx-01/backend/api/print-stocks-report?start_date=${startDate}&end_date=${endDate}`)
+    fetch(`http://localhost/web-app/lspu-cmi/backend/api/print-stocks-report?start_date=${startDate}&end_date=${endDate}`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');

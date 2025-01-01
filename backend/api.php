@@ -156,6 +156,7 @@ function post_add_stock(){
   $description = $_POST['description'] ?? '';
   $quantity = $_POST['quantity'] ?? '';
   $unit_price = $_POST['unit_price'] ?? '';
+  $expiry_date = $_POST['expiry_date'] ?? '';
 
   if(empty($product_name)){
     $response['error'] = 'Product name is required.';
@@ -183,12 +184,18 @@ function post_add_stock(){
     return;
   }
 
+  if(empty($expiry_date)){
+    $response['error'] = 'Expiry date is required.';
+    echo json_encode($response);
+    return;
+  }
+
   // Generate product ID
   $product_id = 'PR-' . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);;
 
   // Insert new stock entry into the database
-  $stmt = $conn->prepare("INSERT INTO stocks (product_id, product_name, description, quantity, unit_price) VALUES (?, ?, ?, ?, ?)");
-  $stmt->bind_param("sssss", $product_id, $product_name, $description, $quantity, $unit_price);
+  $stmt = $conn->prepare("INSERT INTO stocks (product_id, product_name, description, quantity, unit_price, expiry_date) VALUES (?, ?, ?, ?, ?, ?)");
+  $stmt->bind_param("ssssss", $product_id, $product_name, $description, $quantity, $unit_price, $expiry_date);
 
   if($stmt->execute()){
     $response['success'] = 'Stock added successfully.';
@@ -854,6 +861,7 @@ function put_update_stock(){
   $description = $_POST['description'] ?? '';
   $quantity = $_POST['quantity'] ?? '';
   $unit_price = $_POST['unit_price'] ?? '';
+  $expiry_date = $_POST['expiry_date'] ?? '';
 
   if(empty($id)){
     $response['error'] = 'Product ID is required.';
@@ -876,6 +884,9 @@ function put_update_stock(){
   }
   if(!empty($unit_price)){
     $update_fields[] = "unit_price = $unit_price";
+  }
+  if(!empty($expiry_date)){
+    $update_fields[] = "expiry_date = '$expiry_date'";
   }
 
   $update_query .= implode(", ", $update_fields) . " WHERE product_id = ?";
